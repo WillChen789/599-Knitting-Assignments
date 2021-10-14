@@ -50,9 +50,17 @@ class Knit_Graph:
         """
         # Todo: Implement
         # Add a node with the loop id to the graph with a parameter keyed to it at "loop" to store the loop
+        loop_id = loop.loop_id
+        self.graph.add_node(loop_id, loop=loop)
+
         # If this loop is not on its specified yarn add it to the end of the yarn
+        yarn_id = loop.yarn_id
+        is_twisted = loop.is_twisted
+        if yarn_id not in self.yarns.keys():
+            self.yarns[yarn_id].add_loop_to_end(loop_id=loop_id, loop=loop, is_twisted=is_twisted)
+
         # Add the loop to the loops dictionary
-        raise NotImplementedError
+        self.loops[loop_id] = loop
 
     def add_yarn(self, yarn: Yarn):
         """
@@ -75,7 +83,21 @@ class Knit_Graph:
         # Todo: Implement
         # Make an edge in the graph from the parent loop to the child loop. The edge should have three parameters:
         # "pull_direction", "depth", and "parent_offset"
+        self.graph.add_edge(
+            parent_loop_id,
+            child_loop_id,
+            pull_direction=pull_direction,
+            depth=depth,
+            parent_offset=parent_offset
+        )
+
         # add the parent loop to the child's parent loop stack
+        child_loop = self.loops[child_loop_id]
+        parent_loop = self.loops[parent_loop_id]
+        if stack_position is not None:
+            child_loop.parent_loops.insert(stack_position, parent_loop)
+        else:
+            child_loop.parent_loops.append(parent_loop)
 
     def get_courses(self) -> Tuple[Dict[int, float], Dict[float, List[int]]]:
         """
@@ -92,7 +114,39 @@ class Knit_Graph:
         # A course  of a knitted structure is a set of neighboring loops that do not involve loops on the prior course
         # The first course (starting with loop 0) is the 0th course
         # Note that not having a parent loop does not mean a loop is on course 0, consider yarn-overs
-        raise NotImplementedError
+        loop_ids_to_course = {}
+        course_ids_to_loop_id_list = {}
+
+        course_num = 0
+        cur_loop_id = 0
+
+        # Return empty dictionaries if we have no loops
+        if cur_loop_id not in self.loops.keys():
+            return loop_ids_to_course, course_ids_to_loop_id_list
+
+        # Process each loop in the graph starting from loop 0, checking each loop to see if a course change has occurred
+        while len(loop_ids_to_course.keys()) < len(self.loops.keys()):
+            cur_loop = self.loops[cur_loop_id]
+
+            # Check parent loops to see if course change has occurred
+            for parent_loop in cur_loop.parent_loops:
+                parent_course = loop_ids_to_course[parent_loop.loop_id]
+                # Course change because parent loop is in prior course
+                if parent_course == course_num:
+                    course_num += 1
+                    break
+
+            # Add loop and course info to the dictionaries
+            loop_ids_to_course[cur_loop_id] = course_num
+            if course_num not in course_ids_to_loop_id_list.keys():
+                course_ids_to_loop_id_list[course_num] = [cur_loop_id]
+            else:
+                loop_id_list = course_ids_to_loop_id_list[course_num]
+                loop_id_list.append(cur_loop_id)
+
+            cur_loop_id += 1
+
+        return loop_ids_to_course, course_ids_to_loop_id_list
 
     def __contains__(self, item: Union[int, Loop]) -> bool:
         """
