@@ -64,7 +64,7 @@ class Yarn:
 
         # If no loop is provided create one with loop id and twisted parameter
         if loop is None:
-            loop = Loop(loop_id=loop_id, yarn_id=self.yarn_id, is_twisted=True)
+            loop = Loop(loop_id=loop_id, yarn_id=self.yarn_id, is_twisted=is_twisted)
 
         # Add Loop Id as a node to the yarn_graph and add parameter keyed to it at "loop" to store the loop
         self.yarn_graph.add_node(loop_id, loop=loop)

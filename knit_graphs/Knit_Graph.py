@@ -59,8 +59,9 @@ class Knit_Graph:
         if yarn_id not in self.yarns.keys():
             self.yarns[yarn_id].add_loop_to_end(loop_id=loop_id, loop=loop, is_twisted=is_twisted)
 
-        # Add the loop to the loops dictionary
+        # Add the loop to the loops dictionary and update last loop id
         self.loops[loop_id] = loop
+        self.last_loop_id = loop_id
 
     def add_yarn(self, yarn: Yarn):
         """
@@ -84,8 +85,8 @@ class Knit_Graph:
         # Make an edge in the graph from the parent loop to the child loop. The edge should have three parameters:
         # "pull_direction", "depth", and "parent_offset"
         self.graph.add_edge(
-            parent_loop_id,
             child_loop_id,
+            parent_loop_id,
             pull_direction=pull_direction,
             depth=depth,
             parent_offset=parent_offset
@@ -130,11 +131,12 @@ class Knit_Graph:
 
             # Check parent loops to see if course change has occurred
             for parent_loop in cur_loop.parent_loops:
-                parent_course = loop_ids_to_course[parent_loop.loop_id]
-                # Course change because parent loop is in prior course
-                if parent_course == course_num:
-                    course_num += 1
-                    break
+                if parent_loop.loop_id in loop_ids_to_course.keys():
+                    parent_course = loop_ids_to_course[parent_loop.loop_id]
+                    # Course change because parent loop is in prior course
+                    if parent_course == course_num:
+                        course_num += 1
+                        break
 
             # Add loop and course info to the dictionaries
             loop_ids_to_course[cur_loop_id] = course_num
