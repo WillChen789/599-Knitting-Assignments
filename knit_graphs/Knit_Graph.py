@@ -48,7 +48,7 @@ class Knit_Graph:
         """
         :param loop: the loop to be added in as a node in the graph
         """
-        # Todo: Implement
+
         # Add a node with the loop id to the graph with a parameter keyed to it at "loop" to store the loop
         loop_id = loop.loop_id
         self.graph.add_node(loop_id, loop=loop)
@@ -81,7 +81,7 @@ class Knit_Graph:
         :param pull_direction: the direction the child is pulled through the parent
         :param stack_position: The position to insert the parent into, by default add on top of the stack
         """
-        # Todo: Implement
+
         # Make an edge in the graph from the parent loop to the child loop. The edge should have three parameters:
         # "pull_direction", "depth", and "parent_offset"
         self.graph.add_edge(
@@ -111,7 +111,7 @@ class Knit_Graph:
         The first set of loops in the graph is on course 0.
         A course change occurs when a loop has a parent loop that is in the last course.
         """
-        # Todo: Implement
+
         # A course  of a knitted structure is a set of neighboring loops that do not involve loops on the prior course
         # The first course (starting with loop 0) is the 0th course
         # Note that not having a parent loop does not mean a loop is on course 0, consider yarn-overs

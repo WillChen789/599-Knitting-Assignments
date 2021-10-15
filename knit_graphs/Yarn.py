@@ -53,7 +53,6 @@ class Yarn:
             it defaults to 1 more than last put on the knit Graph (CHANGE)
         :return: the loop_id added to the yarn, the loop added to the yarn
         """
-        # TODO: Implement
 
         # If Loop Id is None generate a new id from provided loop or based on last id on this yarn
         if loop_id is None:
