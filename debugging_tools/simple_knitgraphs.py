@@ -45,8 +45,50 @@ def rib(width: int = 4, height: int = 4, rib_width: int = 1) -> Knit_Graph:
     assert width > 0
     assert height > 0
     assert rib_width <= width
-    # Todo Implement
-    raise NotImplementedError
+
+    from knit_graphs.Knit_Graph import Pull_Direction
+
+    # Initialize Knit Graph and Yarn
+    knit_graph = Knit_Graph()
+    yarn = Yarn("yarn", knit_graph)
+    knit_graph.add_yarn(yarn)
+
+    # Since every course will have the same pattern of knits and purls (going left-to-right),
+    # we can pre-compute and reuse the sequence
+    pull_direction = []
+    cur_pull_direction = Pull_Direction.BtF
+
+    # Fill in all of the full ribs
+    for cur_rib in range(width // rib_width):
+        for stitch in range(rib_width):
+            pull_direction.append(cur_pull_direction)
+        cur_pull_direction = cur_pull_direction.opposite()
+
+    # Finish any remaining stitches on the final incomplete rib (if it exists)
+    for rem_rib in range(width % rib_width):
+        pull_direction.append(cur_pull_direction)
+
+    # make the first set of loops on the bottom (0th) course
+    first_course = []
+    for _ in range(0, width):
+        loop_id, loop = yarn.add_loop_to_end()
+        first_course.append(loop_id)
+        knit_graph.add_loop(loop)
+
+    # make new course of loops and connect them to the last course
+    prior_course = first_course
+    for _ in range(1, height):
+        next_course = []
+        pull_direction.reverse()
+        for index, parent_id in enumerate(reversed(prior_course)):
+            child_id, child = yarn.add_loop_to_end()
+            next_course.append(child_id)
+            knit_graph.add_loop(child)
+            direction = pull_direction[index]
+            knit_graph.connect_loops(parent_id, child_id, pull_direction=direction)
+        prior_course = next_course
+
+    return knit_graph
 
 
 def seed(width: int = 4, height=4) -> Knit_Graph:
@@ -58,8 +100,37 @@ def seed(width: int = 4, height=4) -> Knit_Graph:
     """
     assert width > 0
     assert height > 0
-    # Todo Implement
-    raise NotImplementedError
+
+    from knit_graphs.Knit_Graph import Pull_Direction
+
+    # Initialize Knit Graph and Yarn
+    knit_graph = Knit_Graph()
+    yarn = Yarn("yarn", knit_graph)
+    knit_graph.add_yarn(yarn)
+
+    # make the first set of loops on the bottom (0th) course
+    first_course = []
+    for _ in range(0, width):
+        loop_id, loop = yarn.add_loop_to_end()
+        first_course.append(loop_id)
+        knit_graph.add_loop(loop)
+
+    # The first stitch should always be a knit
+    cur_dir = Pull_Direction.BtF
+
+    # make new course of loops and connect them to the last course
+    prior_course = first_course
+    for _ in range(1, height):
+        next_course = []
+        for index, parent_id in enumerate(reversed(prior_course)):
+            child_id, child = yarn.add_loop_to_end()
+            next_course.append(child_id)
+            knit_graph.add_loop(child)
+            knit_graph.connect_loops(parent_id, child_id, pull_direction=cur_dir)
+            cur_dir = cur_dir.opposite()  # Reverse direction at every stitch to get "checkerboard" pattern
+        prior_course = next_course
+
+    return knit_graph
 
 
 def twisted_stripes(width: int = 4, height=5, left_twists: bool = True) -> Knit_Graph:
@@ -70,7 +141,7 @@ def twisted_stripes(width: int = 4, height=5, left_twists: bool = True) -> Knit_
     :return: A knitgraph with repeating pattern of twisted stitches surrounded by knit wales
     """
     knitGraph = Knit_Graph()
-    yarn = Yarn("yarn", knit_graph)
+    yarn = Yarn("yarn", knitGraph)
     knitGraph.add_yarn(yarn)
 
     # Add the first course of loops
