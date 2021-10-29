@@ -40,7 +40,7 @@ class Knitout_Generator:
         for course in self._sorted_courses:
             if course > 0:  # ignore the cast on course, already created
                 course_loops = self._courses_to_loop_ids[course]
-                self._knit_row(course_loops, pass_direction, course)  # Todo: implement below
+                self._knit_row(course_loops, pass_direction, course)
                 pass_direction = pass_direction.opposite()
         self._instructions.append(outhook(self._machine_state, [self._carrier]))
         self._drop_loops()  # redundant with knitout-to-dat, but clears the bed. Note we have not bound off
@@ -54,19 +54,18 @@ class Knitout_Generator:
         :param course_number: the course identifier for comments only
         """
         carrier_set = [self._carrier]
-        loop_id_to_target_needle = self._do_xfers_for_row(loop_ids, direction)  # Todo: implement this first
-        # Todo: Implement as follows
-        #  collect the needles that need to be knitted and the loop_id being created on each needle
-        #  build a "knit" carriage pass in the direction with the given carrier_set
-        #  add that carriage pass to the instructions (i.e., _add_carriage_pass(...)).
-        #  I recommend including a course comment with the course id
+        loop_id_to_target_needle = self._do_xfers_for_row(loop_ids, direction)
 
+        # Collect the needles that need to be knitted and the loop_id being created on each needle
         knits: Dict[Needle, Tuple[int, None]] = {}
         for loop_id in loop_id_to_target_needle.keys():
             cur_needle = loop_id_to_target_needle[loop_id]
             knits[cur_needle] = loop_id, None
 
+        # Build knit carriage pass in the provided direction and carrier_set
         carriage_pass = Carriage_Pass(Instruction_Type.Knit, direction, knits, carrier_set, self._machine_state)
+
+        # Add carriage pass to the instructions, with course comment with course id
         self._add_carriage_pass(carriage_pass, "Knit course " + str(course_number))
 
     def _do_xfers_for_row(self, loop_ids: List[int], direction: Pass_Direction) -> Dict[int, Needle]:
@@ -77,10 +76,10 @@ class Knitout_Generator:
         :return:
         """
         loop_id_to_target_needle, parent_loops_to_needles, lace_offsets, front_cable_offsets, back_cable_offsets \
-            = self._find_target_needles(loop_ids, direction)  # todo: implement first
-        self._do_decrease_transfers(parent_loops_to_needles, lace_offsets)  # todo: implement second
-        self._do_cable_transfers(parent_loops_to_needles, front_cable_offsets, back_cable_offsets)  # todo: implement third
-        self._do_knit_purl_xfers(loop_id_to_target_needle)  # todo: look at how this implemented for reference
+            = self._find_target_needles(loop_ids, direction)
+        self._do_decrease_transfers(parent_loops_to_needles, lace_offsets)
+        self._do_cable_transfers(parent_loops_to_needles, front_cable_offsets, back_cable_offsets)
+        self._do_knit_purl_xfers(loop_id_to_target_needle)
         return loop_id_to_target_needle
 
     def _find_target_needles(self, loop_ids: List[int], direction: Pass_Direction) -> \
@@ -113,16 +112,16 @@ class Knitout_Generator:
                 assert parent_needle is not None, f"Parent loop {parent_id} is not held on a needle"
                 parent_loops_to_needles[parent_id] = parent_needle
             if len(parent_ids) == 0:  # yarn-over, yarn overs are made on front bed
-                # Todo: implement finding target needle for yarn-overs
-                #  yarn over needle position is dependent on the current Pass_Direction and the loop_pos (index in course)
-                #  if moving from the left to right, the target needle will be the index in the course
-                #  else, it will be the index in the course subtracted from the max_needle involved in the course
-                if Pass_Direction == "+":
+
+                # Find yarn over needle position depending on pass direction
+                if Pass_Direction == "+":  # left to right
                     target_needle = Needle(is_front=True, position=loop_pos)
-                else:
+                else:  # right to left
                     target_needle = Needle(is_front=True, position=max_needle - loop_pos)
 
+                # Record the target needle information
                 loop_id_to_target_needle[loop_id] = target_needle
+
             elif len(parent_ids) == 1:  # knit, purl, may be in cable, no needle
                 parent_id = [*parent_ids][0]
                 parent_needle = parent_loops_to_needles[parent_id]
@@ -130,19 +129,19 @@ class Knitout_Generator:
                 cable_depth = self._knit_graph.graph[parent_id][loop_id]["depth"]
                 pull_direction = self._knit_graph.graph[parent_id][loop_id]["pull_direction"]
                 front_bed = pull_direction is Pull_Direction.BtF  # knit on front bed, purl on back bed
-                # Todo: implement finding target needle for this parent which may be in a cable
-                #  if there is a parent offset, this must be in a cable (depth != 0)
-                #  collect the cable_offset information if in a cable. Check if in front of the cable, or back of cable
-                #  collect the target needle information.
-                #  The target needle will be the offset from the parent_needle by the parent_offset
-                #  collect the parent offset information
+
+                # If the parent is in a cable, collect the cable_offset information
                 if cable_depth != 0:
                     if cable_depth > 0:  # cross in front
                         front_cable_offsets[parent_id] = parent_offset
                     else:  # cross behind
                         back_cable_offsets[parent_id] = parent_offset
+
+                # Record the target needle information, with the adjusted offset position
                 target_needle = Needle(is_front=front_bed, position=parent_needle.position+parent_offset)
                 loop_id_to_target_needle[loop_id] = target_needle
+
+                # Record the parent offset information
                 parents_to_offsets[parent_id] = parent_offset
 
             else:  # decrease, the bottom parent loop in the stack will be on the target needle
@@ -180,14 +179,20 @@ class Knitout_Generator:
         # key offset values (-N...0..N) to starting needles to their target needle
         for parent_id, parent_needle in parent_loops_to_needles.items():
             if parent_id in decrease_offsets:  # this loop is involved in a decrease
-                # todo: Implement
-                #  collect transfer data for moves from parent needle to opposite bed
-                #  collect transfer data based on offset from holding needle to offset needle from parent
+
+                # Collect transfer data for moves from parent needle to opposite bed
                 xfers_to_holding_bed[parent_needle] = (None, parent_needle.opposite())
+
+                # Get parent offset
                 offset = decrease_offsets[parent_id]
+
+                # Initialize the inner dictionary if it doesn't exist
                 if offset not in offset_to_xfers_to_target:
                     offset_to_xfers_to_target[offset] = {}
+
+                # Collect transfer data based on offset from holding needle to offset needle from parent
                 offset_to_xfers_to_target[offset][parent_needle.opposite()] = (None, parent_needle.offset(offset))
+
         carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfers_to_holding_bed, [], self._machine_state)
         self._add_carriage_pass(carriage_pass, "send loops to decrease to back")
         for offset in sorted(offset_to_xfers_to_target.keys()):
@@ -213,23 +218,31 @@ class Knitout_Generator:
         for parent_loop, parent_needle in parent_loops_to_needles.items():
             front_needle = Needle(is_front=True, position=parent_needle.position)
             back_needle = parent_needle.opposite()
-            # Todo implement, fill in dictionaries to make the needed transfer passes
-            #  note, parent_loop may already be on back bed
-            # only want to transfer if parnt loop in cable
+
+            # only want to transfer if parent loop in cable
             if parent_loop in front_cable_offsets or parent_loop in back_cable_offsets:
-                xfers_to_back[parent_needle] = (None, back_needle)  # actual declaration don't use Tuple[] syntax
+                # always transfer loop to the back bed
+                xfers_to_back[parent_needle] = (None, back_needle)
+
                 if parent_loop in front_cable_offsets:
-                    #xfers_to_back[parent_needle] = (None, back_needle)  # actual declaration don't use Tuple[] syntax
+                    # Retrieve the parent offset
                     offset = front_cable_offsets[parent_loop]
-                    # check if the inner dictionary exists
+
+                    # check if the inner dictionary exists, create otherwise
                     if parent_loop not in front_cable_xfers:
                         front_cable_xfers[parent_loop] = {}
+
+                    # Store the transfer information
                     front_cable_xfers[parent_loop][back_needle] = (None, parent_needle.offset(offset))
                 else:
+                    # Retrieve the parent offset
                     offset = back_cable_offsets[parent_loop]
-                    # check if the inner dictionary exists
+
+                    # check if the inner dictionary exists, create otherwise
                     if parent_loop not in back_cable_xfers:
                         back_cable_xfers[parent_loop] = {}
+
+                    # Store the transfer information
                     back_cable_xfers[parent_loop][back_needle] = (None, parent_needle.offset(offset))
 
         carriage_pass = Carriage_Pass(Instruction_Type.Xfer, None, xfers_to_back, [], self._machine_state)
