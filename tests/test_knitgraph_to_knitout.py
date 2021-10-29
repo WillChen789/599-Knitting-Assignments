@@ -24,7 +24,7 @@ def test_seed():
 def test_lace():
     knitGraph = lace(4, 4)
     generator = Knitout_Generator(knitGraph)
-    generator.write_instructions("test_lace_k.k")
+    generator.write_instructions("test_lace.k")
 
 
 def test_both_twists():
