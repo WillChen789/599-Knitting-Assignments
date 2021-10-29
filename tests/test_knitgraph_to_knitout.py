@@ -1,3 +1,4 @@
+from debugging_tools.knit_graph_viz import visualize_knitGraph
 from debugging_tools.simple_knitgraphs import *
 from knitting_machine.knitgraph_to_knitout import Knitout_Generator
 
@@ -28,5 +29,14 @@ def test_lace():
 
 def test_both_twists():
     knitGraph = both_twists(height=4)
+    visualize_knitGraph(knitGraph)
     generator = Knitout_Generator(knitGraph)
     generator.write_instructions("test_twists.k")
+
+
+if __name__ == "__main__":
+    test_stst()
+    test_rib()
+    test_seed()
+    test_lace()
+    test_both_twists()
