@@ -29,7 +29,6 @@ def test_lace():
 
 def test_both_twists():
     knitGraph = both_twists(height=4)
-    visualize_knitGraph(knitGraph)
     generator = Knitout_Generator(knitGraph)
     generator.write_instructions("test_twists.k")
 
