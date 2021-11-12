@@ -188,20 +188,26 @@ class Knitspeak_Compiler:
         course_index = len(self.cur_course_loop_ids)
         prior_course_index = (len(self.last_course_loop_ids) - 1) - course_index
         if stitch_def.child_loops == 1:
-            # Todo: Implement processing the stitch into the knitgraph
-            #  add a new loop to the end of  self.yarn and add it to the self.knitgraph
-            #  iterate over the stitch's parent offsets in their stack order
-            #   the index of the parent_loop in self.last_course_loop_ids will be the prior_course_index plus the offset
-            #   mark the parent_loop as "consumed" by putting it in the loop_ids_consumed_by_current_course set
-            #   then connect that parent loop to the new child_loop given the stitch information in the stitch_def
-            #  add the newly created loop to the end of self.cur_course_loop_ids
+            # Process the stitch into the knitgraph
+
+            # Add a new loop to the end of self.yarn
             child_loop_id, loop = self.yarn.add_loop_to_end()
+
+            # Add the new loop to self.knitgraph
             self.knit_graph.add_loop(loop)
 
+            # Iterate over the stitch's parent offsets in their stack order
             for stack_pos, parent_offset in enumerate(stitch_def.offset_to_parent_loops):
+                # Get the parent_loop index
                 parent_loop_idx = prior_course_index + parent_offset
+
+                # Get the parent loop id using the offset
                 parent_loop_id = self.last_course_loop_ids[parent_loop_idx]
+
+                # Mark the parent loop as "consumed" by adding it to loops_ids_consumed_by_parent
                 self.loop_ids_consumed_by_current_course.add(parent_loop_id)
+
+                # Connect parent loop to child loop using stitch definition information
                 self.knit_graph.connect_loops(
                     parent_loop_id=parent_loop_id,
                     child_loop_id=child_loop_id,
@@ -210,6 +216,8 @@ class Knitspeak_Compiler:
                     depth=stitch_def.cabling_depth,
                     parent_offset=parent_offset
                 )
+
+            # Add the new loop to the end of cur_course_loop_ids
             self.cur_course_loop_ids.append(child_loop_id)
 
         else:  # slip statement
