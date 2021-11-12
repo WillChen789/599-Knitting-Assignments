@@ -114,7 +114,7 @@ class Knitout_Generator:
             if len(parent_ids) == 0:  # yarn-over, yarn overs are made on front bed
 
                 # Find yarn over needle position depending on pass direction
-                if Pass_Direction == "+":  # left to right
+                if direction is Pass_Direction.Left_to_Right:
                     target_needle = Needle(is_front=True, position=loop_pos)
                 else:  # right to left
                     target_needle = Needle(is_front=True, position=max_needle - loop_pos)
@@ -216,7 +216,6 @@ class Knitout_Generator:
         front_cable_xfers: Dict[int, Dict[Needle, Tuple[None, Needle]]] = {}
         back_cable_xfers: Dict[int, Dict[Needle, Tuple[None, Needle]]] = {}
         for parent_loop, parent_needle in parent_loops_to_needles.items():
-            front_needle = Needle(is_front=True, position=parent_needle.position)
             back_needle = parent_needle.opposite()
 
             # only want to transfer if parent loop in cable
