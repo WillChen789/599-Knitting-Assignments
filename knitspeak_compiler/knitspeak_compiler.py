@@ -195,7 +195,23 @@ class Knitspeak_Compiler:
             #   mark the parent_loop as "consumed" by putting it in the loop_ids_consumed_by_current_course set
             #   then connect that parent loop to the new child_loop given the stitch information in the stitch_def
             #  add the newly created loop to the end of self.cur_course_loop_ids
-            raise NotImplementedError
+            child_loop_id, loop = self.yarn.add_loop_to_end()
+            self.knit_graph.add_loop(loop)
+
+            for stack_pos, parent_offset in enumerate(stitch_def.offset_to_parent_loops):
+                parent_loop_idx = prior_course_index + parent_offset
+                parent_loop_id = self.last_course_loop_ids[parent_loop_idx]
+                self.loop_ids_consumed_by_current_course.add(parent_loop_id)
+                self.knit_graph.connect_loops(
+                    parent_loop_id=parent_loop_id,
+                    child_loop_id=child_loop_id,
+                    pull_direction=stitch_def.pull_direction,
+                    stack_position=stack_pos,
+                    depth=stitch_def.cabling_depth,
+                    parent_offset=parent_offset
+                )
+            self.cur_course_loop_ids.append(child_loop_id)
+
         else:  # slip statement
             assert len(stitch_def.offset_to_parent_loops) == 1, "Cannot slip multiple loops"
             for stack_position, parent_offset in enumerate(stitch_def.offset_to_parent_loops):
